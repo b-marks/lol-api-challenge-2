@@ -64,7 +64,7 @@ def estimate_first_win(request):
 
         data = json.load(response)
         try:
-            summoner_id = data[summoner_name.lower()]["id"]
+            summoner_id = data.values()[0]["id"]
         except:
             return HttpResponse(render(request, 'firstwin.html',{"message": "Could not find summoner id for summoner name: " + summoner_name, "form": form}), status=404)
 
