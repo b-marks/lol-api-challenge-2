@@ -35,20 +35,40 @@
         if(hours == 12){
             hours -= 12;
         }
-        while(minutes < 0){
-            minutes+= 60;
-            hours--;
-        }
-        var day = p1;
-        var ampm = p6;
-        if(hours < 0){
-            hours+= 12;
-            if(ampm == "P"){
-                ampm = "A";
-            }else{
-                ampm = "P";
-                if(day == "tomorrow"){
-                    day = "today";
+        if(offset2 > 0) {
+            while (minutes < 0) {
+                minutes += 60;
+                hours--;
+            }
+            var day = p1;
+            var ampm = p6;
+            if (hours < 0) {
+                hours += 12;
+                if (ampm == "P") {
+                    ampm = "A";
+                } else {
+                    ampm = "P";
+                    if (day == "tomorrow") {
+                        day = "today";
+                    }
+                }
+            }
+        }else{
+           while (minutes >= 60) {
+                minutes -= 60;
+                hours++;
+            }
+            var day = p1;
+            var ampm = p6;
+            if (hours >= 12) {
+                hours -= 12;
+                if (ampm == "A") {
+                    ampm = "P";
+                } else {
+                    ampm = "A";
+                    if (day == "today") {
+                        day = "tomorrow";
+                    }
                 }
             }
         }
@@ -56,6 +76,7 @@
             hours = 12;
         }
         var new_time = day + " at " + hours + ":" + minutes + ampm + "M";
+        console.log(new_time, arr, p1, p2, p3, p4, p5, p6, offset2, offset, string);
         return new_time;
     }
 </script>
