@@ -119,10 +119,9 @@ def estimate_first_win(request):
     return render(request, 'firstwin.html', {"message":message,"form":form})
 
 def getTime(utc_time, cur_time_utc):
-    offset = timedelta(0,(datetime.now() - datetime.utcnow()).seconds)
-    local_time = utc_time + offset
+    local_time = utc_time
     return_value = "today"
-    if local_time.time() < (cur_time_utc + offset).time():
+    if local_time.time() < (cur_time_utc).time():
         return_value = "tomorrow"
     return_value += " at " + local_time.strftime("%I:%M%p").lstrip("0") + "."
     return return_value
