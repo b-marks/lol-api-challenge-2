@@ -35,6 +35,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'FirstWin',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -69,6 +70,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'main.wsgi.application'
 
+API_KEY = os.environ.get('APIKEY')
 
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
