@@ -26,6 +26,7 @@ SECRET_KEY = 'i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s'
 DEBUG = True
 
 
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -35,7 +36,9 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'FirstWin',
+    'ChampionMastery',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -111,7 +114,7 @@ USE_TZ = True
 
 
 # Update database configuration with $DATABASE_URL.
-db_from_env = dj_database_url.config(conn_max_age=500)
+db_from_env = dj_database_url.config(conn_max_age=None)
 DATABASES['default'].update(db_from_env)
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()

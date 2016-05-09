@@ -1,0 +1,1 @@
+psql -d mylocaldb2 -f copy_from_db.sql
