@@ -6,32 +6,35 @@ from django.shortcuts import render
 import urllib2
 import json
 import hashlib
+import csv
+import os
 import pytz
 from time import sleep
 
 from FirstWin.models import RateLimitTimer
 from main.settings import API_KEY
-from models import Champions
+from models import Champions, Matchup
 from models import ChampionMastery
 from models import Summoners
 from models import MatchList
 from models import Match
 from models import APIUsage
+from forms import FindCounterPick
 from django.shortcuts import redirect
 
 # Create your views here.
 def load_champions(request):
     if Champions.objects.exists():
-        return redirect('home')
+        Champions.objects.all().delete()
     region = 'na'
-    url = urllib2.Request("https://{0}.api.pvp.net/api/lol/static-data/{0}/v1.2/champion?dataById=True&api_key={1}".format(region, API_KEY))
+    url = urllib2.Request("https://{0}.api.pvp.net/api/lol/static-data/{0}/v1.2/champion?dataById=True&champData=image&api_key={1}".format(region, API_KEY))
     try:
         response = urllib2.urlopen(url)
     except urllib2.HTTPError as e:
         raise
     data = json.load(response)['data']
     for key,value in data.iteritems():
-        champ=Champions(champion_id=key, champion_name=value['name'])
+        champ=Champions(champion_id=key, champion_name=value['name'], image_name=value['image']['full'])
         champ.save()
     return redirect('home')
 
@@ -241,3 +244,141 @@ def get_match(request, region=None, match_id=None):
             match.winner = team.get('winner', 'N/A')
     match.save()
     return redirect('home')
+
+def load_matchups(is_mid, opponent_champion_id):
+    matchups=[]
+    filename = 'solo_mid_matchups.csv' if is_mid else 'solo_top_matchups.csv'
+    csv_filepathname = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
+    dataReader = csv.reader(open(csv_filepathname), delimiter=',', quotechar='"')
+    for row in dataReader:
+        if row[16] == str(opponent_champion_id):
+            matchup = Matchup()
+            matchup.champion_level=int(row[0])
+            matchup.champion_points=int(row[1])
+            matchup.chest_granted=row[2]
+            matchup.highest_grade=row[3]
+            matchup.champion_id=int(row[4])
+            matchup.summoner_table_id=row[5]
+            matchup.region=row[6]
+            matchup.role=row[7]
+            matchup.lane=row[8]
+            matchup.queue=row[9]
+            matchup.match_id=row[10]
+            matchup.won=int(row[11])
+            matchup.grade=row[12]
+            matchup.chest=int(row[13])
+            matchup.champion_level_avg=row[14]
+            matchup.champion_level_diff=row[15]
+            matchup.opponent_champion_id=int(row[16])
+            matchup.matchup=row[17]
+            matchups.append(matchup)
+    return matchups
+
+def get_champion_masteries(summoner_id, region):
+    platforms = {'br':'br1', 'euw':'euw1', 'eune':'eun1', 'jp':'jp1', 'kr':'kr', 'lan':'la1', 'las':'la2', 'na':'na1', 'oce':'oc1', 'ru':'ru', 'tr':'tr1'}
+    url = urllib2.Request("https://{0}.api.pvp.net/championmastery/location/{1}/player/{2}/champions?api_key={3}".format(region, platforms[region], summoner_id, API_KEY))
+    try:
+        response = urllib2.urlopen(url)
+    except urllib2.HTTPError as e:
+        if e.code == 429:
+            num_seconds = 5
+            if "Retry-After" in e.headers:
+                num_seconds = int(e.headers.get("Retry-After"))
+            timers = RateLimitTimer.objects.filter(region=region)
+            try:
+                timer = timers[0]
+            except:
+                timer=RateLimitTimer(region=region)
+            timer.next_check_time = datetime.utcnow() + timedelta(seconds=num_seconds)
+            timer.save()
+            return HttpResponse("Rate limit exceeded. Try again in " + num_seconds + " seconds.", status=429)
+        else:
+            return HttpResponse(status=e.code)
+    except urllib2.URLError:
+        return HttpResponse("Error connecting to the Riot API. Try again soon.", status=504)
+    data = json.load(response)
+    champion_masteries = []
+    for champ in data:
+        c = (champ.get('championId', 'N/A'), champ.get('championLevel', 'N/A'))
+        champion_masteries.append(c)
+    return champion_masteries
+
+def get_summoner_id(summoner_name, region):
+    url_summoner_name = urllib2.quote(summoner_name.encode("utf8")).lower()
+    url = urllib2.Request("https://{0}.api.pvp.net/api/lol/{0}/v1.4/summoner/by-name/{1}?api_key={2}".format(region, url_summoner_name, API_KEY))
+    valid_regions = ["br","eune","euw","kr","lan","las","na","oce","ru","tr"]
+    if region not in valid_regions:
+        return -400
+    try:
+        response = urllib2.urlopen(url)
+    except urllib2.HTTPError as e:
+        if e.code == 429:
+            num_seconds = 5
+            if "Retry-After" in e.headers:
+                num_seconds = e.headers.get("Retry-After")
+            timers = RateLimitTimer.objects.filter(region=region)
+            try:
+                timer = timers[0]
+            except:
+                timer=RateLimitTimer(region=region)
+            timer.next_check_time = datetime.now() + timedelta(seconds=num_seconds)
+            timer.save()
+            return -429
+        else:
+            return -e.code
+    except urllib2.URLError:
+        return -504
+
+    data = json.load(response)
+    try:
+        return data.values()[0]["id"]
+    except:
+        return -404
+
+def get_counters(matchups, champion_masteries, num_counters):
+    counters = []
+    for champ in champion_masteries:
+        champion_id = champ[0]
+        champion_level = champ[1]
+        wins = 0
+        games = 0
+        for matchup in matchups:
+            if matchup.champion_level == champion_level and matchup.champion_id == champion_id:
+                games += 1
+                if matchup.won:
+                    wins += 1
+        if games < 3:
+            continue
+        win_rate = float(wins)/games
+        counter = (champion_id, win_rate)
+        counters.append(counter)
+    counters.sort(key=lambda tup: tup[1], reverse=True)
+    if num_counters < len(counters):
+        return counters[0:num_counters]
+    return counters
+
+def find_my_counterpick(request):
+    img_url = 'http://ddragon.leagueoflegends.com/cdn/6.9.1/img/champion/{0}'
+    if request.method == 'POST':
+        form = FindCounterPick(request.POST)
+        if form.is_valid():
+            opponent = Champions.objects.filter(champion_name=form.cleaned_data['opponent_champion'])[0]
+            matchups = load_matchups(form.cleaned_data['lane'] == '0', opponent.champion_id)
+            summoner_id = get_summoner_id(form.cleaned_data['summoner_name'], form.cleaned_data['region'])
+            if summoner_id == -404:
+                return HttpResponse('Summoner name could not be found. Ensure spelling and region are correct.', status=404)
+            if summoner_id == -429:
+                return HttpResponse('Rate limit of Riot API exceeded. Try again soon.', status=429)
+            if summoner_id < 0:
+                return HttpResponse('Error occurred. Please ensure everything is correct and try again soon.',status=-summoner_id)
+            champion_masteries = get_champion_masteries(summoner_id, form.cleaned_data['region'])
+            counter_picks = get_counters(matchups, champion_masteries, int(form.cleaned_data['num_counters']))
+            counters = []
+            for counter in counter_picks:
+                champ = Champions.objects.filter(champion_id=counter[0])[0]
+                counters.append((champ.champion_name, img_url.format(champ.image_name), '{:10.2f}%'.format(counter[1] * 100)))
+            return render(request, 'counter_pick_results.html', {'counters': counters, 'lane': 'Mid' if form.cleaned_data['lane'] == '0' else 'Top', 'opponent': opponent.champion_name, 'opponent_img': img_url.format(opponent.image_name)})
+
+    else:
+        form = FindCounterPick()
+    return render(request, 'counter_pick.html', {'form': form})

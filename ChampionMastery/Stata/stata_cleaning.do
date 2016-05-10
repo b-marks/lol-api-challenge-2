@@ -1,4 +1,3 @@
-cd C:\Users\Ben\Documents\GitHub\lol-api-challenge-2\ChampionMastery\Stata
 insheet using summoners.csv,clear
 save summoners,replace
 insheet using matchlist.csv,clear
@@ -89,6 +88,8 @@ drop  id summoner_id summoner_priority summoner_used match_used match_priority w
 save matchups,replace
 keep if lane=="TOP"&role=="SOLO"
 save solo_top_matchups,replace
+outsheet using "../solo_top_matchups.csv", comma replace
 use matchups,clear
 keep if lane=="MIDDLE"&role=="SOLO"
 save solo_mid_matchups,replace
+outsheet using "../solo_mid_matchups.csv",comma replace

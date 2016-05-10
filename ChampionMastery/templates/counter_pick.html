@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+  <div class="container">
+      <p>
+          What champion should I play against my opponent?
+          <br />
+          This website calculates your personalized counter picks to different champions in the top and mid lane based on your champion mastery and a database of over 65,000 ranked games played since champion mastery was launched.
+      </p>
+      <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="Calculate my counter picks" />
+      </form>
+  </div>
+
+{% endblock %}

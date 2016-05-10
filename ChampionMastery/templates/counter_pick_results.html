@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load staticfiles %}
+
+{% block content %}
+  <div class="container">
+      {% if counters|length > 0 %}
+      <p>
+          Your top {{counters|length}} counter picks to <img src="{{opponent_img}}" alt="{{opponent_img}}"> in the {{lane}} lane are
+      </p>
+      <table>
+          <thead>
+            <tr>
+                <th>
+                    Champion
+                </th>
+                <th>
+
+                </th>
+                <th>
+                    Win rate
+                </th>
+            </tr>
+          </thead>
+          <tbody>
+              {% for counter in counters %}
+                <tr>
+                    {% for part in counter %}
+                        <td>
+                            {% if forloop.counter == 2 %}
+                                <img src="{{part}}" alt="{{part}}">
+                            {% else %}
+                                {{part}}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+              {% endfor %}
+          </tbody>
+      </table>
+      {% else %}
+      No matches were found in our database with champions you have mastery of against <img src="{{opponent_img}}" alt="{{opponent_img}}"> in the {{lane}} lane. Try expanding your champion pool.
+      {% endif %}
+  </div>
+
+{% endblock %}

@@ -14,6 +14,7 @@ class Summoners(models.Model):
 class Champions(models.Model):
     champion_id=models.IntegerField(unique=True)
     champion_name=models.CharField(max_length=100)
+    image_name=models.CharField(max_length=256)
 
 class ChampionMastery(models.Model):
     champion=models.ForeignKey('Champions', to_field='champion_id', on_delete=models.CASCADE)
@@ -62,3 +63,23 @@ class APIUsage(models.Model):
     api_hash=models.CharField(max_length=512, db_index=True)
     region=models.CharField(max_length=10, db_index=True)
     timestamp=models.DateTimeField(auto_now_add=True, db_index=True)
+
+class Matchup():
+    champion_level=0
+    champion_points=0
+    chest_granted='f'
+    highest_grade='N/A'
+    champion_id=0
+    summoner_table_id=0
+    region='na'
+    role='SOLO'
+    lane='TOP'
+    queue='TEAM_BUILDER_DRAFT_RANKED_5x5 '
+    match_id=0
+    won=0
+    grade=0
+    chest=0
+    champion_level_avg=0
+    champion_level_diff=0
+    opponent_champion_id=0
+    matchup=0
