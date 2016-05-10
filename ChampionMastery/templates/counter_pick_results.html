@@ -3,12 +3,22 @@
 
 {% block content %}
   <div class="container">
+
       {% if counters|length > 0 %}
-      <p>
-          Your top {{counters|length}} counter picks to <img src="{{opponent_img}}" alt="{{opponent_img}}"> in the {{lane}} lane are
-      </p>
+
       <table>
-          <thead>
+          <thead><tr><td>
+                   Your top {{counters|length}} counter pick(s) to
+                </td>
+                <td>
+                    <img src="{{opponent_img}}" alt="{{opponent_img}}">
+                </td>
+                <td>
+                     in the {{lane}} lane are
+                </td>
+
+          </tr><br/>
+          <tr><td><br/></td></tr>
             <tr>
                 <th>
                     Champion
@@ -37,6 +47,9 @@
               {% endfor %}
           </tbody>
       </table>
+      <p>
+          A * after the winrate indicates that the result was based on a sample of fewer than 10 games.
+      </p>
       {% else %}
       No matches were found in our database with champions you have mastery of against <img src="{{opponent_img}}" alt="{{opponent_img}}"> in the {{lane}} lane. Try expanding your champion pool.
       {% endif %}

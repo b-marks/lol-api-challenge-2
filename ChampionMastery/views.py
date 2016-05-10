@@ -350,7 +350,7 @@ def get_counters(matchups, champion_masteries, num_counters):
         if games < 3:
             continue
         win_rate = float(wins)/games
-        counter = (champion_id, win_rate)
+        counter = (champion_id, win_rate, games)
         counters.append(counter)
     counters.sort(key=lambda tup: tup[1], reverse=True)
     if num_counters < len(counters):
@@ -376,7 +376,7 @@ def find_my_counterpick(request):
             counters = []
             for counter in counter_picks:
                 champ = Champions.objects.filter(champion_id=counter[0])[0]
-                counters.append((champ.champion_name, img_url.format(champ.image_name), '{:10.2f}%'.format(counter[1] * 100)))
+                counters.append((champ.champion_name, img_url.format(champ.image_name), '{:10.2f}%'.format(counter[1] * 100) , '*' if counter[2] < 10 else ''))
             return render(request, 'counter_pick_results.html', {'counters': counters, 'lane': 'Mid' if form.cleaned_data['lane'] == '0' else 'Top', 'opponent': opponent.champion_name, 'opponent_img': img_url.format(opponent.image_name)})
 
     else:
